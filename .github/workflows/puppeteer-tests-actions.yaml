@@ -1,19 +1,45 @@
-name: Puppeteer DocServer Suite Tests
+name: Puppeteer Test Actions
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
+      provider:
+        description: 'Provider to test'
+        required: true
+        type: string
       suite:
         description: 'Test suite to run'
+        required: false
+        type: string
+        default: 'default'
+      url:
+        description: 'Stand URL to test'
+        required: false
+        type: string
+        default: ''
+      launch_name:
+        description: 'Report Portal launch name'
+        required: false
+        type: string
+        default: 'Github Action Tests'
+    secrets:
+      READ_PAT:
         required: true
-        type: choice
-        options:
-          - daily
-          - default
-        default: daily
+      REPORT_KEY:
+        required: true
+      TELEGRAM_TOKEN:
+        required: true
+      TELEGRAM_TO:
+        required: true
+      URL_RELEASE:
+        required: false
+      URL_HOTFIX:
+        required: false
+      URL_DEVELOP:
+        required: false
 
 jobs:
-  puppeteer-docserver-daily:
+  puppeteer-test:
     strategy:
       fail-fast: false
       matrix:
@@ -24,7 +50,6 @@ jobs:
             platform: mac
           - os: ubuntu-latest
             platform: linux
-        provider: [docspace, ncoc, ocis, wopi, example]
     
     runs-on: ${{ matrix.config.os }}
 
@@ -58,6 +83,19 @@ jobs:
           cd Dep.Tests
           git submodule update --init --depth 1 puppeteer/files
 
+      - name: Set stand url to config
+        if: inputs.url != ''
+        run: |
+          node -e "
+            const fs = require('fs');
+            const filePath = 'Dep.Tests/puppeteer/config_chrome_${{ matrix.config.platform }}.json';
+            const config = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            
+            config.testOptions.url = '${{ inputs.url }}' + 'example';
+            
+            fs.writeFileSync(filePath, JSON.stringify(config, null, 2));
+          "
+
       - name: Add reports key to config
         run: |
           node -e "
@@ -67,7 +105,7 @@ jobs:
             
             config.api_key = '${{ secrets.REPORT_KEY }}';
             config.project_name = 'docsserver';
-            config.launch_name = 'Github Action Daily Tests';
+            config.launch_name = '${{ inputs.launch_name }}';
             
             fs.writeFileSync(filePath, JSON.stringify(config, null, 2));
           "
@@ -111,12 +149,12 @@ jobs:
       - name: Run tests
         run: |
           cd Dep.Tests/puppeteer/engine
-          python run.py --suite ${{ inputs.suite }} --disable_animation --config_params puppeteerOptions.headless=true --providers ${{ matrix.provider }}
+          python run.py --suite ${{ inputs.suite }} --disable_animation --config_params puppeteerOptions.headless=true --providers ${{ inputs.provider }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: out - ${{ matrix.config.os }} - ${{ matrix.provider }}
+          name: out - ${{ matrix.config.os }} - ${{ inputs.provider }}
           path: |
             Dep.Tests/puppeteer/out
 
@@ -126,7 +164,8 @@ jobs:
         env:
           MESSAGE: |
             Workflow: ${{ github.workflow }}
-            Github job: ${{ github.job }} - ${{ matrix.config.os }} - ${{ matrix.provider }}
+            Provider: ${{ inputs.provider }}
+            Github job: ${{ github.job }} - ${{ matrix.config.os }}
             Github job status: ${{ job.status == 'success' && '\u2705' || job.status == 'failure' && '\u274C' || '\u2753' }} - ${{ job.status }}
             
             [View Action Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
