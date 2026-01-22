@@ -3,7 +3,7 @@ name: Puppeteer Hourly Tests
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7,23 * * *"
+    - cron: "0 * * * *"
 
 jobs:
   test-docspace-eu:
@@ -12,7 +12,7 @@ jobs:
       provider: "docspaceEU"
       suite: "hourly"
       launch_name: "Hourly Tests - docspaceEU"
-      project_name: "docsserver"
+      project_name: "docspace-saas"
     secrets:
       READ_PAT: ${{ secrets.READ_PAT }}
       REPORT_KEY: ${{ secrets.REPORT_KEY }}
@@ -26,7 +26,7 @@ jobs:
       provider: "docspaceUS"
       suite: "hourly"
       launch_name: "Hourly Tests - docspaceUS"
-      project_name: "docsserver"
+      project_name: "docspace-saas"
     secrets:
       READ_PAT: ${{ secrets.READ_PAT }}
       REPORT_KEY: ${{ secrets.REPORT_KEY }}
