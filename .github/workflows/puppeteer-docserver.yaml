@@ -19,6 +19,7 @@ jobs:
     uses: ./.github/workflows/puppeteer-tests-actions.yaml
     with:
       provider: 'example'
+      project_name: "docsserver"
       suite: 'default'
       url: ${{ github.event.inputs.url }}
       launch_name: 'Github Action All Tests'
