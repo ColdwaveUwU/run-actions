@@ -194,6 +194,11 @@ runs:
           echo "OS_DISPLAY=macOS" >> $GITHUB_ENV
         fi
 
+    - name: Get Job ID
+      if: always()
+      id: job-id
+      uses: austenstone/job-id@v1
+
     - name: Send message to telegram
       if: always()
       shell: bash
@@ -205,8 +210,8 @@ runs:
           Github job: ${{ github.job }}
           Github job status: ${{ job.status == 'success' && '✅' || job.status == 'failure' && '❌' || '❓' }} - ${{ job.status }}
 
-          [View Action Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          [View Job Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }})
+          [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          [View Job Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.job-id.outputs.job-id }})
       run: |
         MESSAGE=$(echo "$MESSAGE" | sed 's/"/\\"/g')
         curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
